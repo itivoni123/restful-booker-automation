@@ -28,12 +28,17 @@ The UI suite validates:
 The integration scenario:
 
 1. Authenticates through the API.
-2. Creates a booking through the API.
-3. Keeps the generated booking data within the test.
-4. Searches the same date range through the UI.
-5. Verifies that the booked room is no longer offered as available.
+2. Creates a booking through the API and captures the returned booking ID.
+3. Opens the corresponding room in the Admin UI.
+4. Uses the dynamically returned booking ID to identify the booking from the data loaded by the UI.
+5. Locates the corresponding rendered booking row.
+6. Verifies that the displayed first name, last name, deposit status, check-in date and check-out date match the data sent during API creation.
 
-This verifies that state created through one application layer is reflected through another layer.
+No booking ID is hardcoded.
+
+The application does not render the booking ID directly in the booking row DOM. To preserve the requirement that the API-returned ID identifies the booking, the Admin Page Object observes the booking-list response loaded by the UI, finds the exact booking by its returned ID, and maps that booking to the corresponding rendered row.
+
+This keeps the verification UI-focused while providing deterministic API-to-UI correlation without relying on fixed IDs or ambiguous guest data.
 
 ## Project Structure
 

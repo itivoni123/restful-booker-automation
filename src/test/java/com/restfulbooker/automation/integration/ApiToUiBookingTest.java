@@ -6,12 +6,9 @@ import com.restfulbooker.automation.api.model.BookingData;
 import com.restfulbooker.automation.config.ConfigManager;
 import com.restfulbooker.automation.data.BookingDataFactory;
 import com.restfulbooker.automation.ui.base.BaseUiTest;
-import com.restfulbooker.automation.ui.pages.BookingPage;
+import com.restfulbooker.automation.ui.pages.AdminPage;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.Test;
-
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
@@ -25,7 +22,7 @@ class ApiToUiBookingTest extends BaseUiTest {
             new BookingApiClient();
 
     @Test
-    void shouldReflectApiCreatedBookingInUiAvailability() {
+    void shouldDisplayApiCreatedBookingInAdminUi() {
         Response loginResponse =
                 authApiClient.login("admin", "password");
 
@@ -53,34 +50,45 @@ class ApiToUiBookingTest extends BaseUiTest {
 
         assertTrue(bookingId > 0);
 
-        LocalDate checkin =
-                LocalDate.parse(
+        AdminPage adminPage =
+                new AdminPage(page);
+
+        page.navigate(
+                ConfigManager.getBaseUrl() + "/admin"
+        );
+
+        adminPage.login("admin", "password");
+
+        adminPage.openRoom(booking.roomid());
+
+        /*
+         * The booking ID returned by the API is passed into the
+         * UI lookup. No hardcoded booking ID is used.
+         */
+        var bookingRow =
+                adminPage.bookingById(bookingId);
+
+        assertThat(bookingRow).isVisible();
+
+        assertThat(bookingRow)
+                .containsText(booking.firstname());
+
+        assertThat(bookingRow)
+                .containsText(booking.lastname());
+
+        assertThat(bookingRow)
+                .containsText(
+                        String.valueOf(booking.depositpaid())
+                );
+
+        assertThat(bookingRow)
+                .containsText(
                         booking.bookingdates().checkin()
                 );
 
-        LocalDate checkout =
-                LocalDate.parse(
+        assertThat(bookingRow)
+                .containsText(
                         booking.bookingdates().checkout()
                 );
-
-        BookingPage bookingPage =
-                new BookingPage(page);
-
-        page.navigate(ConfigManager.getBaseUrl());
-
-        bookingPage.searchAvailableRooms(
-                uiDate(checkin),
-                uiDate(checkout)
-        );
-
-        assertThat(
-                bookingPage.roomReservationLink(1)
-        ).not().isVisible();
-    }
-
-    private static String uiDate(LocalDate date) {
-        return date.format(
-                DateTimeFormatter.ofPattern("dd/MM/yyyy")
-        );
     }
 }
